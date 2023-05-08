@@ -3,10 +3,7 @@ import io from 'socket.io-client';
 import shortid from 'shortid';
 
 const App = () => {
-  const [tasks, setTasks] = useState([
-    { id: 1, name: 'wyjsc z psem' },
-    { id: 2, name: 'nakarmic psa' },
-  ]);
+  const [tasks, setTasks] = useState([]);
   const [socket, setSocket] = useState(null);
   const [taskName, setTaskName] = useState('');
 
@@ -14,17 +11,22 @@ const App = () => {
     const socket = io('http://localhost:8000');
     setSocket(socket);
     socket.on('updateData', (data) => {
-      console.log('Received initial data from server:', data);
+      updateTasks(data);
     });
     socket.on('addTask', (task) => {
-      console.log('New task added:', task);
-      setTasks((prevTasks) => [...prevTasks, task]);
+      addTask(task);
+    });
+    socket.on('removeTask', (taskId) => {
+      removeTask(taskId);
     });
   }, []);
 
-  const removeTask = (taskId) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-    if (socket !== null) {
+  const updateTasks = (taskData) => {
+    setTasks(taskData);
+  };
+  const removeTask = (taskId, isLocal) => {
+    setTasks((tasks) => tasks.filter((task) => task.id !== taskId));
+    if (isLocal) {
       socket.emit('removeTask', taskId);
     }
   };
@@ -33,8 +35,8 @@ const App = () => {
     e.preventDefault();
     const data = { name: taskName, id: shortid.generate() };
     addTask(data);
+    socket.emit('addTask', { name: taskName, id: shortid.generate() });
     setTaskName('');
-    socket.emit('addTask', data);
   };
 
   const handleChange = (e) => {
@@ -57,7 +59,7 @@ const App = () => {
             <li className='task' key={task.id}>
               {task.name}
               <button
-                onClick={() => removeTask(task.id)}
+                onClick={() => removeTask(task.id, true)}
                 className='btn btn--red'
               >
                 Remove
