@@ -16,6 +16,7 @@ app.use((req, res) => {
 const io = socket(server);
 
 io.on('connection', (socket) => {
+  console.log('connected', socket.id);
   socket.broadcast.emit('updateData', tasks);
   socket.on('addTask', (data) => {
     tasks.push(data);
@@ -23,6 +24,7 @@ io.on('connection', (socket) => {
   });
   socket.on('removeTask', (taskId) => {
     tasks = tasks.filter((task) => task.id !== taskId);
+    console.log(tasks, taskId);
     socket.broadcast.emit('removeTask', taskId);
   });
 });
